@@ -1,29 +1,29 @@
-from lib2to3.pytree import convert
-from unittest import result
-from urllib.request import DataHandler
-from doctr.io import DocumentFile
-from doctr.models import ocr_predictor
-from PIL import Image
-import os
-from fuzzywuzzy import fuzz
-from config import AZKEY1, DATA, AZKEY2, ENDPOINT, rearrange_output
 
+import os
+import time
+import json
+from PIL import Image, ImageDraw
+from fuzzywuzzy import fuzz
+from config import AZKEY1, DATA, AZKEY2, ENDPOINT
+from helper import rearrange_output, draw_cord
+
+# Azure OCR imports
+from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.computervision import ComputerVisionClient
 from azure.cognitiveservices.vision.computervision.models import OperationStatusCodes
 from azure.cognitiveservices.vision.computervision.models import VisualFeatureTypes
-from msrest.authentication import CognitiveServicesCredentials
 
-DOCTR_MODEL = ocr_predictor(det_arch='db_resnet50', reco_arch='crnn_vgg16_bn', pretrained=True)
+
+
+subscription_key = AZKEY1
+computervision_client = ComputerVisionClient(ENDPOINT, CognitiveServicesCredentials(subscription_key))
 
 class Extractor:
     
-    def __init__(self, document):
-        
-        self.document = document
+    def __init__(self):
         self.doc_words = []
         self.output = {}
     
-
     def generate_ngrams(self, words, n_range=2):
         ngrams = []
         for i in range(0, len(words)-(n_range-1)):
@@ -41,16 +41,10 @@ class Extractor:
     def get_radius_text(self, cords, words):
         max_word_x = max([word[0][2] for word in words])
 
-        left = cords[0] - int(max_word_x*0.02)
+        left = cords[0] - int(max_word_x*0.2)
         top = cords[1] - int(max_word_x*0.02)
-        right = cords[2] + int(max_word_x*0.2)
+        right = cords[2] + int(max_word_x*0.25)
         bottom = cords[3] + int(max_word_x*0.08)
-        
-        from PIL import Image, ImageDraw
-        img = Image.open('image.jpg')
-        dr = ImageDraw.Draw(img)
-        dr.rectangle((left, top, right, bottom), outline="green", width=2)
-        img.save('rad.png')
 
         radius_words = []
         for word in words:
@@ -59,7 +53,7 @@ class Extractor:
                     word[0][2] < right  and \
                         word[0][3] < bottom:
                         radius_words.append(word)
-
+        # draw_cord((left,top,right,bottom), "red", "/home/aman/Documents/ocr_test/aadh2.png", "/home/aman/Documents/ocr_test/dob_2.png")
         return ' '.join(w[1] for w in radius_words)
 
     def find_key_value(self, key, words):
@@ -69,84 +63,78 @@ class Extractor:
         for idx,label in enumerate(n_grams):
             if fuzz.ratio(label[1].lower().strip(), key.lower().strip()) > 85:
                 matches.update({idx:label})
-
-        if not matches:
-            breakpoint()
             
         for index,matched_label in matches.items():
             radius_text = self.get_radius_text(matched_label[0], words[index:])     
-            # breakpoint()
+        
+            print("Possible Text :: ", radius_text)
 
-            print(radius_text)
-
-    def extract(self, words):
-        # self.doc_words = rearrange_output(ocr_data)
-        self.find_key_value("First Name", words)
-        # doc = self.document
-        # self.get_radius_text()
-        return self.output
-
-
-if __name__ == "__main__":
-    import time
-
+def get_ocr_data_azure(file_path):
     """ AZURE OCR CODE """
-
-    subscription_key = AZKEY1
-    computervision_client = ComputerVisionClient(ENDPOINT, CognitiveServicesCredentials(subscription_key))
-    
-    images_folder = "/home/attihs/Downloads"
-
-    # Get image path
-    read_image_path = os.path.join (images_folder, "image.jpg")
-    # Open the image
-
-    read_image = open(read_image_path, "rb")
-
-    # Call API with image and raw response (allows you to get the operation location)
-    read_response = computervision_client.read_in_stream(read_image, raw=True)
-
-    # Get the operation location (URL with ID as last appendage)
-    read_operation_location = read_response.headers["Operation-Location"]
-    # Take the ID off and use to get results
-    operation_id = read_operation_location.split("/")[-1]
-
-    # Call the "GET" API and wait for the retrieval of the results
-    while True:
-        read_result = computervision_client.get_read_result(operation_id)
-        if read_result.status.lower () not in ['notstarted', 'running']:
-            break
-        print ('Waiting for result...')
-        time.sleep(10)
-
-    # Print results, line by line
     pages_data = {}
-    if read_result.status == OperationStatusCodes.succeeded:
-        # data = read_result.analyze_result.read_results.as_dict
-        for text_result in read_result.analyze_result.read_results:
-            data = text_result.as_dict()
-            # for line in text_result.lines:
-            #     print(line.text)
-            #     print(line.bounding_box)
-            pages_data.update({data['page']:rearrange_output(data)})
+
+    try:
+        # Open the image
+        read_image = open(file_path, "rb")
+
+        # Call API with image and raw response (allows you to get the operation location)
+        read_response = computervision_client.read_in_stream(read_image, raw=True)
+
+        # Get the operation location (URL with ID as last appendage)
+        read_operation_location = read_response.headers["Operation-Location"]
+        # Take the ID off and use to get results
+        operation_id = read_operation_location.split("/")[-1]
+
+        # Call the "GET" API and wait for the retrieval of the results
+        while True:
+            read_result = computervision_client.get_read_result(operation_id)
+            if read_result.status.lower () not in ['notstarted', 'running']:
+                break
+            print ('Waiting for result...')
+            time.sleep(10)
+
+        # Print results, line by line
+        pages_data = {}
+        if read_result.status == OperationStatusCodes.succeeded:
+            # data = read_result.analyze_result.read_results.as_dict
+            for text_result in read_result.analyze_result.read_results:
+                data = text_result.as_dict()
+                # for line in text_result.lines:
+                #     print(line.text)
+                #     print(line.bounding_box)
+                pages_data.update({data['page']:rearrange_output(data)})
+    except Exception as e:
+        print(f"Azure OCR error :: Exception :: {str(e)}")
+  
+    return pages_data
+   
+
+if __name__ == '__main__':
+    # Get image path
+    folder = "/home/aman/Documents/ocr_test/"
+    json_folder = folder+"json_data/"
+
+    file_path = os.path.join (folder, "aadh2.png")
+    file_name = os.path.split(file_path)[-1]
+    json_file_name = file_name.split('.')[0]+".json"
     
+    if json_file_name not in os.listdir(json_folder):
+        print("OCRING...")
+        pages_data =  get_ocr_data_azure(file_path)
+    else:
+        print("Reading Existing ")
+        fr = open(json_folder + json_file_name)
+        pages_data = json.load(fr)
+        fr.close()
+
+    if json_file_name not in os.listdir(json_folder):
+        print("Writing....")
+        fp = open(json_folder+json_file_name, 'w')
+        json.dump(pages_data,fp)
+        fp.close()
     
-    """ Draw box for words"""
-    # from PIL import Image, ImageDraw
-    # img = Image.open(read_image_path)
-    # dr = ImageDraw.Draw(img)
-
-    # for _,page_words in pages_data.items():
-    #     for word in page_words:
-    #         dr.rectangle(word[0], outline="red", width=3)
-    # img.save('reg.png')
-
-
     """ TESTING FURTHER """
-    # pages_data = {}
-    # pages_data.update({DATA['page']:rearrange_output(DATA)})
-    # breakpoint()
-    ext = Extractor('path')
+    ext = Extractor()
     for page, words in pages_data.items():
         print("[+] Finding at Page :: ", page)
-        ext.find_key_value("First Name", words)
+        ext.find_key_value("DOB", words)

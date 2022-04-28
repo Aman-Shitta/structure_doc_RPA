@@ -2,21 +2,6 @@ AZKEY1 = "e4054d5dbc0042e3b9ae8ffdf3cb7459"
 AZKEY2 = "281b5f1d195040789e18b1ef3d824074"
 ENDPOINT = "https://aman-shitta.cognitiveservices.azure.com/"
 
-def rearrange_output(data):
-      words = []
-      try:
-         for line in data['lines']:
-               for word in line['words']:
-                  # cords = [int(i) for i in word['bounding_box'].split(',')]
-                  cords = (word['bounding_box'][0], word['bounding_box'][1], word['bounding_box'][-4],word['bounding_box'][-3])
-                  WORD = word['text']
-                  conf = word["confidence"]*100
-                  words.append(((cords, WORD, conf)))
-      except Exception as e:
-         print(f"reaggrange_output :: Exception :: {str(e)}")
-      
-      return words
-
 DATA = {
    "page":1,
    "angle":0.0855,
