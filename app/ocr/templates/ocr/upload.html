@@ -1,0 +1,43 @@
+{% extends 'ocr/base.html' %}
+
+{%  block body %}
+
+
+	<h3> Upload your files here  </h3>
+
+	<div>
+	{% if messages %}
+	{% for message in messages %}
+		{% if message.tags == 'success' %}
+		<div class="alert alert-success" role="alert">
+		  {{message}}
+		</div>
+		{% endif %}
+
+		{% if message.tags == 'info' %}
+		<div class="alert alert-warning" role="alert">
+		  {{message}}
+		</div>
+		{% endif %}
+
+		{% if message.tags == 'error' %}
+		<div class="alert alert-danger" role="alert">
+		  {{message}}
+		</div>
+		{% endif %}
+
+	{% endfor %}
+	{% endif %}
+	</div>
+	<form method="POST" enctype="multipart/form-data">
+		{% csrf_token %}
+		Name for doc : {{form.name}}
+		Upload Your Image/Doc here : {{form.document}}
+		<!-- <input type="hidden" name="user" value="{{user}}"> -->
+		<input type="submit" name="upload" value="Upload">
+		
+	</form>
+
+	<br><br>
+	<!-- <a class="btn btn-primary" href="{% url 'index' %}" role="button">Home Page</a> -->
+	{% endblock %}

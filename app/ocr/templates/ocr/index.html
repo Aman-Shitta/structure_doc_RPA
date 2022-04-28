@@ -1,0 +1,34 @@
+{% extends 'ocr/base.html' %}
+
+{%  block body %}
+	<h3> An App for OCR'ing Documents </h3>
+
+	<br><br>
+
+    <h2> Processed documents </h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Date Of Upload</th>
+                <th scope="col">Download</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for doc in docs %}
+            <tr>
+                <th scope="row"> {{forloop.counter}}</th>
+                <td>{{doc.name}}</td>
+                <td>{{doc.created_at}}</td>
+
+                <td><a href="{% url 'report' doc.id %}" class="btn btn-primary">Report</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% comment %}
+    <!-- <a class="btn btn-primary" href="{% url 'index' %}" role="button">Home Page</a>
+    <a class="btn btn-primary" href="{% url 'upload' %}" role="button">Upload Document</a> -->
+    {% endcomment %}
+{% endblock %}
