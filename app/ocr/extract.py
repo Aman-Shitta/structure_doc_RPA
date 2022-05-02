@@ -1,11 +1,11 @@
-
+import re
 import os
 import time
 import json
 from PIL import Image, ImageDraw
 from fuzzywuzzy import fuzz
-from config import AZKEY1, DATA, AZKEY2, ENDPOINT
-from helper import rearrange_output, draw_cord
+from .config import AZKEY1, DATA, AZKEY2, ENDPOINT
+from .helper import rearrange_output, draw_cord
 
 # Azure OCR imports
 from msrest.authentication import CognitiveServicesCredentials
@@ -58,6 +58,7 @@ class Extractor:
 
     def find_key_value(self, key, words):
         matches = {}
+        radius_text = ""
         key_len = len(key.split())
         n_grams = self.generate_ngrams(words, key_len)
         for idx,label in enumerate(n_grams):
@@ -68,6 +69,7 @@ class Extractor:
             radius_text = self.get_radius_text(matched_label[0], words[index:])     
         
             print("Possible Text :: ", radius_text)
+        return radius_text
 
 def get_ocr_data_azure(file_path):
     """ AZURE OCR CODE """
@@ -108,13 +110,15 @@ def get_ocr_data_azure(file_path):
   
     return pages_data
    
-
-if __name__ == '__main__':
+def extract_attribute(key, file_path, regex):
     # Get image path
-    folder = "/home/aman/Documents/ocr_test/"
-    json_folder = folder+"json_data/"
-
-    file_path = os.path.join (folder, "aadh2.png")
+    file_loc = os.path.split(file_path)[0]
+    ocr_folder = "/json_data/"
+    # breakpoint()
+    res = ""
+    # folder = "/home/aman/Documents/ocr_test/"
+    json_folder = file_loc+ocr_folder
+    # file_path = os.path.join (folder, "aadh2.png")
     file_name = os.path.split(file_path)[-1]
     json_file_name = file_name.split('.')[0]+".json"
     
@@ -137,4 +141,14 @@ if __name__ == '__main__':
     ext = Extractor()
     for page, words in pages_data.items():
         print("[+] Finding at Page :: ", page)
-        ext.find_key_value("DOB", words)
+        res = ext.find_key_value(key, words)
+    # breakpoint()
+    all_text = ' '.join(i[1] for i in [j for j in list(pages_data.values())[0]])
+
+    if not res and regex:
+        found = re.search(regex, all_text)
+        if found:
+            res = found.group() 
+        
+
+    return res

@@ -1,7 +1,35 @@
 # Use any of the key in extractor file
-AZKEY1 = "Your <Subscription key 1> here"
-AZKEY2 = "Your <Subscription key 2 > here"
+AZKEY1 = "e4054d5dbc0042e3b9ae8ffdf3cb7459"
+AZKEY2 = "281b5f1d195040789e18b1ef3d824074"
 ENDPOINT = "https://aman-shitta.cognitiveservices.azure.com/"
+
+
+DOC_KEYS = {
+   "adh":[
+         {  
+            "attribute_name":"Name",
+            "regex":"",
+            "labels":["Name"],
+            
+         },{
+            "attribute_name":"DOB",
+            "regex":r"\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}",
+            "labels":["Date Of Birth"]
+         }
+      ],
+   "pan":[
+         {
+            "attribute_name":"Pan Number",
+            "regex":r"[A-Z]{5}\d{4}[A-Z]",
+            "labels":["Permanent Account Number"]
+         },{
+            "attribute_name":"DOB",
+            "regex":r"\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}",
+            "labels":["Date Of Birth"]
+         } 
+      ],
+   # "kyc":[]
+}
 
 DATA = {
    "page":1,
