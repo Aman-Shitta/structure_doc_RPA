@@ -15,8 +15,6 @@ def rearrange_output(data):
     
     return words
 
-
-
 def draw_cord(cords, color, in_name, out_name):
     img = Image.open(in_name)
     dr = ImageDraw.Draw(img)

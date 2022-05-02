@@ -31,9 +31,10 @@
 	</div>
 	<form method="POST" enctype="multipart/form-data">
 		{% csrf_token %}
-		Name for doc : {{form.name}}
-		Upload Your Image/Doc here : {{form.document}}
+		Name for doc : {{form.name}}<br>
+		Upload Your Image/Doc here : {{form.document}}<br>
 		<!-- <input type="hidden" name="user" value="{{user}}"> -->
+		Doc Type :: {{form.document_type}}<br>
 		<input type="submit" name="upload" value="Upload">
 		
 	</form>
