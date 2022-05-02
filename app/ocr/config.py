@@ -1,5 +1,6 @@
-AZKEY1 = "e4054d5dbc0042e3b9ae8ffdf3cb7459"
-AZKEY2 = "281b5f1d195040789e18b1ef3d824074"
+# Use any of the key in extractor file
+AZKEY1 = "Your <Subscription key 1> here"
+AZKEY2 = "Your <Subscription key 2 > here"
 ENDPOINT = "https://aman-shitta.cognitiveservices.azure.com/"
 
 DATA = {
